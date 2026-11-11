@@ -61,7 +61,7 @@ class LoggingReceiver extends Thread {
                 final HardenedLoggingEventInputStream hleis =
                     new HardenedLoggingEventInputStream(mClient.getInputStream());
                 while (true) {
-                    final LoggingEvent event = (LoggingEvent) hleis.readObject();
+                    final LoggingEvent event = (LoggingEvent) hleis.readAdaptedObject();
                     mModel.addEvent(new EventDetails(event));
                 }
             } catch (EOFException e) {

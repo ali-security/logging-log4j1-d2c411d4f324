@@ -76,7 +76,7 @@ public class SocketNode implements Runnable {
       if (ois != null) {
           while(true) {
 	        // read an event from the wire
-	        event = (LoggingEvent) ois.readObject();
+	        event = (LoggingEvent) ois.readAdaptedObject();
 	        // get a logger from the hierarchy. The name of the logger is taken to be the name contained in the event.
 	        remoteLogger = hierarchy.getLogger(event.getLoggerName());
 	        //event.logger = remoteLogger;
