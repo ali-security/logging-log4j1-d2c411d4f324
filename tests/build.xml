@@ -176,7 +176,8 @@
                                      CyclicBuffer, OR,
                                      LevelMatchFilter, PatternParser, 
                                      ErrorHandler,Rewrite, JNDIUtil, JDBC,
-                                     HardenedObjectInputStream"/>
+                                     HardenedObjectInputStream,
+                                     NTEventLogAppenderDllPath"/>
 
   <!-- ================================================================= -->
   <!-- Longer unit tests                                                 -->
@@ -489,6 +490,34 @@
       <classpath refid="tests.classpath"/>
       <formatter type="plain" usefile="false"/>
       <test name="org.apache.log4j.nt.NTEventLogAppenderTest" />
+      <test name="org.apache.log4j.nt.NTEventLogAppenderDllPathTest" />
+    </junit>
+  </target>
+
+  <!--  Runs the NTEventLogAppender DLL path resolution tests on Linux.
+        The appender's static initializer requires a loadable native library
+        named NTEventLogAppender, so an innocuous JRE library (no JNI_OnLoad)
+        is copied under that name onto java.library.path.  -->
+  <target name="ntStubLibrary" depends="build" unless="is-windows">
+    <property name="nt.jre.lib.dir" location="${java.home}/lib/${os.arch}"/>
+    <condition property="nt.stub.lib" value="${nt.jre.lib.dir}/libjava_crw_demo.so">
+      <available file="${nt.jre.lib.dir}/libjava_crw_demo.so"/>
+    </condition>
+    <condition property="nt.stub.lib" value="${nt.jre.lib.dir}/libjaas_unix.so">
+      <available file="${nt.jre.lib.dir}/libjaas_unix.so"/>
+    </condition>
+    <property name="nt.stub.dir" location="./output/ntlib"/>
+    <mkdir dir="${nt.stub.dir}"/>
+  </target>
+
+  <target name="NTEventLogAppenderDllPath" depends="ntStubLibrary" if="nt.stub.lib">
+    <copy file="${nt.stub.lib}" tofile="${nt.stub.dir}/libNTEventLogAppender.so"/>
+    <junit printsummary="yes" fork="yes"
+        haltonfailure="${haltonfailure}" dir="${basedir}">
+      <classpath refid="tests.classpath"/>
+      <sysproperty key="java.library.path" file="${nt.stub.dir}"/>
+      <formatter type="plain" usefile="false"/>
+      <test name="org.apache.log4j.nt.NTEventLogAppenderDllPathTest" />
     </junit>
   </target>
 
