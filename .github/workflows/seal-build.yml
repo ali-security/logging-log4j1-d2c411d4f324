@@ -1,0 +1,85 @@
+name: seal-build
+
+# log4j 1.2.17 has no upstream GitHub Actions CI. This workflow mirrors the
+# project's own Maven build (pom.xml): `mvn verify` compiles with source/target
+# 1.4, runs the Ant regression suite (tests/build.xml `runAll`) via the
+# maven-antrun-plugin `runAll` execution in the test phase, and packages the
+# OSGi bundle jar.
+
+on:
+  workflow_dispatch:
+    inputs:
+      test-filter:
+        description: "Single tests/build.xml target to run instead of runAll (e.g. Core, Socket, Syslog); empty runs the full suite"
+        required: false
+        default: ""
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      MAVEN_VERSION: 3.6.3
+      MAVEN_OPTS: "-Dhttps.protocols=TLSv1.2 -Xmx1g"
+    steps:
+      - uses: actions/checkout@v4
+
+      # setup-java's zulu resolver no longer lists Java 7, so fetch the final
+      # Zulu 7 build from Azul's CDN and register it via the jdkfile distribution.
+      - name: Download Zulu JDK 7
+        run: curl -fsSL https://cdn.azul.com/zulu/bin/zulu7.56.0.11-ca-jdk7.0.352-linux_x64.tar.gz -o "$RUNNER_TEMP/zulu7.tar.gz"
+
+      - name: Set up JDK 7
+        uses: actions/setup-java@v4
+        with:
+          distribution: jdkfile
+          jdkFile: ${{ runner.temp }}/zulu7.tar.gz
+          java-version: "7.0.352"
+          architecture: x64
+
+      - name: Install Maven ${{ env.MAVEN_VERSION }}
+        run: |
+          curl -fsSL "https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz" -o /tmp/maven.tgz
+          tar -xzf /tmp/maven.tgz -C "$HOME"
+          echo "$HOME/apache-maven-${MAVEN_VERSION}/bin" >> "$GITHUB_PATH"
+
+      - name: Versions
+        run: |
+          java -version
+          mvn -v
+
+      - name: Build and test (mvn verify, Ant regression suite)
+        run: |
+          set -o pipefail
+          TARGET="${{ inputs.test-filter }}"
+          if [ -n "$TARGET" ]; then
+            mvn -B verify -Dmaven.site.skip=true -Dlog4j.tests.target="$TARGET" 2>&1 | tee build.log
+          else
+            mvn -B verify -Dmaven.site.skip=true 2>&1 | tee build.log
+          fi
+
+      - name: Test summary
+        if: always()
+        run: |
+          # Ant's printsummary and the plain formatter each print a "Tests run:"
+          # line per suite; count only the one that follows "Testsuite:".
+          echo "Per-suite results (Ant junit):"
+          grep -E -A1 '^\s*\[junit\] Testsuite:' build.log
+          awk '/\[junit\] Testsuite:/ { want = 1; next }
+               want && /\[junit\] Tests run:/ {
+                 gsub(",", "");
+                 for (i = 1; i <= NF; i++) {
+                   if ($i == "run:") r += $(i+1);
+                   if ($i == "Failures:") f += $(i+1);
+                   if ($i == "Errors:") e += $(i+1);
+                 }
+                 s++; want = 0
+               }
+               END { printf "TOTAL: %d suites, %d tests run, %d failures, %d errors, %d passed\n", s, r, f, e, r - f - e }' build.log
+
+      - name: Upload jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: log4j-jar
+          path: target/log4j-1.2.17.jar
+          if-no-files-found: error

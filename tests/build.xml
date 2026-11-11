@@ -366,6 +366,8 @@
   </target>
 
   <target name="ErrorHandler" depends="build">
+    <!-- Same path as XMLLayout/PatternLayout/etc.; avoid stale lines from earlier targets. -->
+    <delete file="output/temp"/>
     <junit printsummary="yes" fork="yes" 
          haltonfailure="${haltonfailure}" dir="${basedir}">
       <classpath refid="tests.classpath"/>

@@ -84,11 +84,16 @@ target platform and specify -Dntdll_target=msbuild on the mvn command line.
     <name>Apache Software Foundation</name>
     <url>http://www.apache.org</url>
   </organization>
+  <properties>
+    <!-- tests/build.xml target run in the test phase; override with -Dlog4j.tests.target=<Target> to run one suite -->
+    <log4j.tests.target>runAll</log4j.tests.target>
+  </properties>
   <build>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
+        <version>3.0.2</version>
         <configuration>
           <encoding>UTF-8</encoding>
         </configuration>
@@ -228,7 +233,7 @@ target platform and specify -Dntdll_target=msbuild on the mvn command line.
             <id>runAll</id>
             <configuration>
               <tasks>
-                 <ant dir="tests" target="runAll">
+                 <ant dir="tests" target="${log4j.tests.target}">
                   <property name="m2_repo" location="${m2_repo}" />
                   <property name="log4j.jar" location="target/classes" />
                   <property name="project.lib.home" location="target" />
