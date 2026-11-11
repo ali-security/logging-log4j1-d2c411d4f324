@@ -38,6 +38,8 @@
   <property name="activation.jar" location="${m2_repo}/javax/activation/activation/1.1/activation-1.1.jar"/>
   <property name="junit.version" value="3.8.1"/>
   <property name="junit.jar" location="${m2_repo}/junit/junit/${junit.version}/junit-${junit.version}.jar"/>
+  <property name="h2.version" value="1.4.200"/>
+  <property name="h2.jar" location="${m2_repo}/com/h2database/h2/${h2.version}/h2-${h2.version}.jar"/>
 
 
   <!-- Read the system environment variables and stores them in properties, -->
@@ -71,6 +73,7 @@
     <pathelement location="${junit.jar}"/>
     <pathelement location="${javamail.jar}"/>
     <pathelement location="${activation.jar}"/>
+    <pathelement location="${h2.jar}"/>
     <pathelement path="${java.class.path}"/>
   </path>
 
@@ -172,7 +175,7 @@
                                      OptionConverter, BoundedFIFO,
                                      CyclicBuffer, OR,
                                      LevelMatchFilter, PatternParser, 
-                                     ErrorHandler,Rewrite, JNDIUtil"/>
+                                     ErrorHandler,Rewrite, JNDIUtil, JDBC"/>
 
   <!-- ================================================================= -->
   <!-- Longer unit tests                                                 -->
@@ -353,6 +356,16 @@
       <classpath refid="tests.classpath"/>
       <formatter type="plain" usefile="false" />
       <test name="org.apache.log4j.net.JNDIUtilTest" />
+    </junit>
+  </target>
+
+  <target name="JDBC" depends="build">
+    <junit printsummary="yes" fork="yes"
+        haltonfailure="${haltonfailure}" dir="${basedir}">
+      <classpath refid="tests.classpath"/>
+      <formatter type="plain" usefile="false" />
+      <test name="org.apache.log4j.jdbc.JdbcPatternParserTest" />
+      <test name="org.apache.log4j.jdbc.JdbcAppenderTest" />
     </junit>
   </target>
 

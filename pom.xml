@@ -528,6 +528,12 @@ target platform and specify -Dntdll_target=msbuild on the mvn command line.
     </dependency>
     -->
     <dependency>
+      <groupId>com.h2database</groupId>
+      <artifactId>h2</artifactId>
+      <version>1.4.200</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>oro</groupId>
       <artifactId>oro</artifactId>
       <version>2.0.8</version>
